@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from models.TopicDistQuant import TopicDistQuant
 from models.TSC import TSC
+from utils.metrics_logger import MetricsLogger
 
 
 ACTIVATION_MAP = {
@@ -27,10 +28,11 @@ NORMALISATION_MAP = {
 
 
 class TSCTM(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, ml: MetricsLogger):
         super().__init__()
 
         self.config = config
+        self.ml = ml
 
         hidden_dim = config.en1_units
         self.fc11 = nn.Linear(config.vocab_size, hidden_dim)
@@ -47,11 +49,11 @@ class TSCTM(nn.Module):
 
         for m in self.modules():
             if isinstance(m, (nn.Conv2d, nn.Linear)):
-                INIT_MAP[self.config.model_init](m.weight)
+                INIT_MAP[self.config.init](m.weight)
 
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
-        
+
         self.activation = ACTIVATION_MAP[self.config.activation]
 
         self.topic_dist_quant = TopicDistQuant(config.num_topic, config.num_topic, commitment_cost=self.config.commitment_cost)
@@ -89,11 +91,16 @@ class TSCTM(nn.Module):
         quant_rst = self.topic_dist_quant(softmax_theta)
 
         recon = self.decode(quant_rst['quantized'])
+
+        self.ml.log('quant.loss', quant_rst['loss'])
         loss = self.loss_function(recon, bow) + quant_rst['loss']
 
         features = torch.cat([F.normalize(theta, dim=1).unsqueeze(1)], dim=1)
         contrastive_loss = self.contrast_loss(features, quant_idx=quant_rst['encoding_indices'])
         loss += contrastive_loss
+
+        self.ml.log('contrastive.loss', contrastive_loss)
+        self.ml.log('loss', loss)
 
         return softmax_theta, loss, contrastive_loss
 

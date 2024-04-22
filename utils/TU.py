@@ -1,7 +1,7 @@
 import os
 import argparse
 import numpy as np
-import data_utils
+from . import data_utils
 from sklearn.feature_extraction.text import CountVectorizer
 
 
@@ -13,11 +13,11 @@ def parse_args():
     return args
 
 
-def TU_eva(texts, verbose=False):
-    K = len(texts)
-    T = len(texts[0].split())
+def TU(top_words, verbose=False):
+    K = len(top_words)
+    T = len(top_words[0].split())
     vectorizer = CountVectorizer()
-    counter = vectorizer.fit_transform(texts).toarray()
+    counter = vectorizer.fit_transform(top_words).toarray()
 
     TU = 0.0
     TF = counter.sum(axis=0)
@@ -40,5 +40,5 @@ def TU_eva(texts, verbose=False):
 if __name__ == "__main__":
     args = parse_args()
     texts = data_utils.read_text(args.data_path)
-    TU = TU_eva(texts, verbose=args.verbose)
+    TU = TU(texts, verbose=args.verbose)
     print("===>TU: {:5f}".format(TU))

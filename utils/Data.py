@@ -8,8 +8,10 @@ from utils import data_utils
 
 class TextData(Dataset):
     def __init__(self, data_dir, device, aug_option_list=None, use_aug=False):
-        name = 'train_texts.txt'
-        self.train_texts = data_utils.read_text(os.path.join(data_dir, '{}'.format(name)))
+        dataset_file = 'train_texts.txt'
+        labels_file = 'train_labels.txt'
+
+        self.train_texts = data_utils.read_text(os.path.join(data_dir, '{}'.format(dataset_file)))
         train_size = len(self.train_texts)
 
         self.use_aug = use_aug
@@ -26,7 +28,7 @@ class TextData(Dataset):
             self.num_contrast = len(aug_option_list)
             self.aug_texts_list = list()
             for aug_option in aug_option_list:
-                aug_text_path = os.path.join(data_dir, '{}_{}'.format(name, aug_option))
+                aug_text_path = os.path.join(data_dir, '{}_{}'.format(dataset_file, aug_option))
                 print('===>reading {}'.format(aug_text_path))
                 self.aug_texts_list.append(data_utils.read_text(aug_text_path))
 
@@ -44,6 +46,8 @@ class TextData(Dataset):
         self.train_bow = torch.tensor(self.train_bow).to(device)
         self.vocab = vectorizer.get_feature_names()
 
+        self.labels = np.asarray([int(l) for l in open(os.path.join(data_dir, labels_file)).read().splitlines()])
+
     def __len__(self):
         return len(self.train_bow)
 
@@ -56,4 +60,5 @@ class TextData(Dataset):
             return {
                 "id": idx,
                 "bow": self.train_bow[idx],
+                "label": self.labels[idx],
             }

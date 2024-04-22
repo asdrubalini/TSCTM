@@ -6,6 +6,7 @@ import yaml
 from torch.utils.data import DataLoader
 from utils import data_utils
 from utils.Data import TextData
+from utils.metrics_logger import MetricsLogger
 from runners.Runner import Runner
 import wandb
 
@@ -56,7 +57,8 @@ def main():
     # data_utils.update_args(config, f"configs/{config.model}.yaml")
     print("===>Info: args: \n", yaml.dump(vars(config), default_flow_style=False))
 
-    wandb.init(config=config, project="TSCTM-Bob-Py37")
+    run = wandb.init(config=config, project="TSCTM-Bob-Py37")
+    ml = MetricsLogger(run)
 
     aug_option_list = None
     if config.use_aug:
@@ -67,11 +69,11 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     train_dataset = TextData(config.data_dir, device, aug_option_list, config.use_aug)
-    train_loader = DataLoader(train_dataset, config.batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, config.batch_size, shuffle=True)
     config.vocab_size = len(train_dataset.vocab)
 
     # Training
-    model_runner = Runner(config, device)
+    model_runner = Runner(config, device, train_dataset.vocab, ml)
     beta = model_runner.train(train_loader)
 
     # Save output

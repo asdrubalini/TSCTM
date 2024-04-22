@@ -1,7 +1,7 @@
 method: bayes
 metric:
   goal: maximize
-  name: theta_q.V-Measure
+  name: v-measure
 
 parameters:
   commitment_cost:
