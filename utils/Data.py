@@ -18,7 +18,7 @@ class TextData(Dataset):
         vectorizer = CountVectorizer()
         self.train_bow = vectorizer.fit_transform(self.train_texts).toarray().astype('float32')
 
-        self.train_vocab = vectorizer.get_feature_names_out()
+        self.train_vocab = vectorizer.get_feature_names()
 
         if aug_option_list:
             print('===>Info: reading augmentation data...')
@@ -42,7 +42,7 @@ class TextData(Dataset):
                 self.train_bow = combined_train_bow
 
         self.train_bow = torch.tensor(self.train_bow).to(device)
-        self.vocab = vectorizer.get_feature_names_out()
+        self.vocab = vectorizer.get_feature_names()
 
     def __len__(self):
         return len(self.train_bow)
