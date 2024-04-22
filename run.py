@@ -54,7 +54,7 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     train_dataset = TextData(config.data_dir, device, aug_option_list, config.use_aug)
-    train_loader = DataLoader(train_dataset, config.batch_size, shuffle=True)
+    train_loader = DataLoader(train_dataset, config.batch_size, shuffle=False)
     config.vocab_size = len(train_dataset.vocab)
 
     # Training
