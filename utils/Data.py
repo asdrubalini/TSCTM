@@ -49,6 +49,11 @@ class TextData(Dataset):
 
     def __getitem__(self, idx):
         if self.use_aug:
+            # TODO: update this code
+            exit(69)
             return [self.train_bow[idx]] + [bow[idx] for bow in self.contrast_bow_list]
         else:
-            return self.train_bow[idx]
+            return {
+                "id": idx,
+                "bow": self.train_bow[idx],
+            }

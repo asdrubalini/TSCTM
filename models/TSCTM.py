@@ -5,6 +5,27 @@ from models.TopicDistQuant import TopicDistQuant
 from models.TSC import TSC
 
 
+ACTIVATION_MAP = {
+    "sigmoid": F.sigmoid,
+    "tanh": F.tanh,
+    "relu": F.relu,
+    "relu6": F.relu6,
+    "leakyrelu": F.leaky_relu,
+    "elu": F.elu,
+    "softplus": F.softplus,
+}
+
+INIT_MAP = {
+    "xavier": nn.init.xavier_uniform_,
+    "kaiming": nn.init.kaiming_uniform_
+}
+
+NORMALISATION_MAP = {
+    "batch_norm": nn.BatchNorm1d,
+    "layer_norm": nn.LayerNorm,
+}
+
+
 class TSCTM(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -16,29 +37,32 @@ class TSCTM(nn.Module):
         self.fc12 = nn.Linear(hidden_dim, hidden_dim)
         self.fc21 = nn.Linear(hidden_dim, config.num_topic)
 
-        self.mean_bn = nn.BatchNorm1d(config.num_topic)
+        self.mean_bn = NORMALISATION_MAP[self.config.normalisation](config.num_topic)
         self.mean_bn.weight.requires_grad = False
 
-        self.decoder_bn = nn.BatchNorm1d(config.vocab_size)
+        self.decoder_bn = NORMALISATION_MAP[self.config.normalisation](config.vocab_size)
         self.decoder_bn.weight.requires_grad = False
 
         self.fcd1 = nn.Linear(config.num_topic, config.vocab_size, bias=False)
 
         for m in self.modules():
             if isinstance(m, (nn.Conv2d, nn.Linear)):
-                nn.init.xavier_uniform_(m.weight)
+                INIT_MAP[self.config.model_init](m.weight)
+
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
+        
+        self.activation = ACTIVATION_MAP[self.config.activation]
 
-        self.topic_dist_quant = TopicDistQuant(config.num_topic, config.num_topic)
+        self.topic_dist_quant = TopicDistQuant(config.num_topic, config.num_topic, commitment_cost=self.config.commitment_cost)
         self.contrast_loss = TSC(config.use_aug, temperature=config.temperature, weight_contrast=config.weight_contrast)
 
     def get_beta(self):
         return self.fcd1.weight.T
 
     def encode(self, inputs):
-        e1 = F.softplus(self.fc11(inputs))
-        e1 = F.softplus(self.fc12(e1))
+        e1 = self.activation(self.fc11(inputs))
+        e1 = self.activation(self.fc12(e1))
         return self.mean_bn(self.fc21(e1))
 
     def decode(self, theta):
@@ -57,13 +81,15 @@ class TSCTM(nn.Module):
             return self.forward_noaug(inputs)
 
     def forward_noaug(self, inputs):
-        theta = self.encode(inputs)
+        bow = inputs['bow']
+
+        theta = self.encode(bow)
         softmax_theta = F.softmax(theta, dim=1)
 
         quant_rst = self.topic_dist_quant(softmax_theta)
 
         recon = self.decode(quant_rst['quantized'])
-        loss = self.loss_function(recon, inputs) + quant_rst['loss']
+        loss = self.loss_function(recon, bow) + quant_rst['loss']
 
         features = torch.cat([F.normalize(theta, dim=1).unsqueeze(1)], dim=1)
         contrastive_loss = self.contrast_loss(features, quant_idx=quant_rst['encoding_indices'])

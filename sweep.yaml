@@ -1,0 +1,41 @@
+method: bayes
+metric:
+  goal: maximize
+  name: theta_q.V-Measure
+
+parameters:
+  commitment_cost:
+    distribution: uniform
+    max: 1.0
+    min: 0.05
+  learning_rate:
+    distribution: uniform
+    max: 0.01
+    min: 0.001
+  temperature:
+    distribution: uniform
+    max: 0.1
+    min: 1.0
+  weight_contrast:
+    distribution: uniform
+    max: 0.1
+    min: 1.0
+  topic_num:
+    distribution: int_uniform
+    min: 20
+    max: 200
+  activation:
+    values: ["relu6", "softplus", "elu", "tanh", "sigmoid", "leakyrelu"]
+  normalisation:
+    values: ["batch_norm", "layer_norm"]
+  init:
+    values: ["kaiming", "xavier"]
+
+program: run.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - --data_dir data/GoogleNews-T/
+  - --model TSCTM
+  - ${args}

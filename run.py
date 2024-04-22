@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from utils import data_utils
 from utils.Data import TextData
 from runners.Runner import Runner
+import wandb
 
 
 def parse_args():
@@ -14,12 +15,21 @@ def parse_args():
     parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--data_dir', type=str, required=True)
     parser.add_argument('--num_epoch', type=int, default=200)
-    parser.add_argument('--batch_size', type=int, default=200)
-    parser.add_argument('--learning_rate', type=float, default=0.002)
-    parser.add_argument('--num_topic', type=int, default=50)
+    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--learning_rate', type=float, default=0.002, required=True)
+    parser.add_argument('--num_topic', type=int, default=50, required=True)
     parser.add_argument('--en1_units', type=int, default=100)
     parser.add_argument('--num_top_word', type=int, default=15)
     parser.add_argument('--test_index', type=int, default=1)
+    parser.add_argument('--commitment_cost', type=float, default=0.1, required=True)
+
+    parser.add_argument('--use_aug', type=bool, default=False)
+    parser.add_argument('--temperature', type=float, default=0.5, required=True)
+    parser.add_argument('--weight_contrast', type=float, default=1.0, required=True)
+
+    parser.add_argument("--normalisation", type=str, required=True, choices=["batch_norm", "layer_norm"])
+    parser.add_argument("--init", type=str, required=True, choices=["kaiming", "xavier"])
+    parser.add_argument("--activation", type=str, required=True, choices=["softplus", "relu6", "relu", "leakyrelu", "elu", "tanh", "sigmoid"])
 
     args = parser.parse_args()
     return args
@@ -42,8 +52,11 @@ def save_theta(model_runner, train_dataset, use_aug, output_prefix):
 
 def main():
     config = parse_args()
-    data_utils.update_args(config, f"configs/{config.model}.yaml")
+    # Yaml sucks
+    # data_utils.update_args(config, f"configs/{config.model}.yaml")
     print("===>Info: args: \n", yaml.dump(vars(config), default_flow_style=False))
+
+    wandb.init(config=config, project="TSCTM-Bob-Py37")
 
     aug_option_list = None
     if config.use_aug:
