@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "TSCTM"
+version = "0.1.0"
+description = ""
+authors = ["Asdrubalini <asdrubalini@mail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.7.17"
+# torch = "^1.7.1"
+# scikit-learn = "^0.23.2"
+# pyyaml = "^6.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
