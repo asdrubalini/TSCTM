@@ -9,7 +9,8 @@ from utils.Data import TextData
 from utils.metrics_logger import MetricsLogger
 from runners.Runner import Runner
 import wandb
-
+import random
+import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -52,6 +53,10 @@ def save_theta(model_runner, train_dataset, use_aug, output_prefix):
 
 
 def main():
+    torch.manual_seed(0)
+    random.seed(0)
+    np.random.seed(0)
+
     config = parse_args()
     # Yaml sucks
     # data_utils.update_args(config, f"configs/{config.model}.yaml")
