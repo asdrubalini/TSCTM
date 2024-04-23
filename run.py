@@ -63,7 +63,7 @@ def main():
     # data_utils.update_args(config, f"configs/{config.model}.yaml")
     print("===>Info: args: \n", yaml.dump(vars(config), default_flow_style=False))
 
-    run = wandb.init(config=config, project="TSCTM-Bob-Py310")
+    run = wandb.init(config=config, project="TSCTM-Bob-Py310-pants")
     ml = MetricsLogger(run)
 
     aug_option_list = None

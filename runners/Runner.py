@@ -92,10 +92,14 @@ class Runner():
                 batch_theta, batch_loss, batch_contrastive_loss = self.model(train_data)
                 batch_theta = list(batch_theta.detach().cpu().numpy())
 
-                for idx, test_label, theta_row in zip(train_data['id'], train_data['label'], batch_theta):
+                for idx, theta_row in zip(train_data['id'], batch_theta):
                     # Reorder this shit
                     theta[idx] = theta_row
-                    test_labels[idx] = test_label
+
+                if 'label' in train_data:
+                    for idx, test_label in zip(train_data['id'], train_data['label']):
+                        # Reorder this shit
+                        test_labels[idx] = test_label
 
                 optimizer.zero_grad()
                 batch_loss.backward()
@@ -107,7 +111,9 @@ class Runner():
             # We have the ordered theta...
             theta = np.asarray(theta)
             beta = self.model.get_beta().detach().cpu().numpy()
-            test_labels = np.asarray(test_labels)
+
+            if test_labels[0] is not None:
+                test_labels = np.asarray(test_labels)
 
             transition_frequency = None
             if theta_prev is not None:
@@ -122,18 +128,22 @@ class Runner():
 
             filled_topics = len(filled_topics_indices)
 
-            h, c, v = supervised_scores(theta_cut, test_labels)
-
-            theta_prev = theta
-
-            self.ml.log_dict({
+            d = {
                 "transition_frequency": transition_frequency,
                 "filled_topics": filled_topics,
                 "tu": tu,
-                "homogeneity": h,
-                "completeness": c,
-                "v-measure": v,
-            })
+            }
+
+            if test_labels[0] is not None:
+                h, c, v = supervised_scores(theta_cut, test_labels)
+
+                d['h'] = h
+                d['c'] = c
+                d['v'] = v
+
+            theta_prev = theta
+
+            self.ml.log_dict(d)
 
             print('Epoch: {:03d}/{:03d} Loss: {:.3f}'.format(epoch, self.config.num_epoch, train_loss / data_size), end=' ')
             print('Contra_loss: {:.3f}'.format(contrastive_loss / data_size))

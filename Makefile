@@ -1,5 +1,5 @@
 train:
-	python run.py --activation=elu --batch_size=245 --commitment_cost=0.22483239391809037 --data_dir=data/GoogleNews-T/ --init=xavier --learning_rate=0.009093320496907555 --model=TSCTM --normalisation=batch_norm --num_topic=174 --temperature=0.12615362517912884 --weight_contrast=0.888871432004498
+	python run.py --activation=softplus --batch_size=256 --commitment_cost=0.9 --data_dir=data/pants/ --init=xavier --learning_rate=0.007 --model=TSCTM --normalisation=batch_norm --num_topic=12 --temperature=0.12 --weight_contrast=0.75
 
 
 eval:

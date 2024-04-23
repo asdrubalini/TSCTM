@@ -17,7 +17,7 @@ class TextData(Dataset):
         self.use_aug = use_aug
         self.aug_option_list = aug_option_list
 
-        vectorizer = CountVectorizer()
+        vectorizer = CountVectorizer(min_df=5)
         self.train_bow = vectorizer.fit_transform(self.train_texts).toarray().astype('float32')
 
         self.train_vocab = vectorizer.get_feature_names_out()
@@ -46,7 +46,9 @@ class TextData(Dataset):
         self.train_bow = torch.tensor(self.train_bow).to(device)
         self.vocab = vectorizer.get_feature_names_out()
 
-        self.labels = np.asarray([int(l) for l in open(os.path.join(data_dir, labels_file)).read().splitlines()])
+        labels_path = os.path.join(data_dir, labels_file)
+        if os.path.isfile(labels_path):
+            self.labels = np.asarray([int(l) for l in open(labels_path, 'r').read().splitlines()])
 
     def __len__(self):
         return len(self.train_bow)
@@ -57,8 +59,12 @@ class TextData(Dataset):
             exit(69)
             return [self.train_bow[idx]] + [bow[idx] for bow in self.contrast_bow_list]
         else:
-            return {
+            d = {
                 "id": idx,
                 "bow": self.train_bow[idx],
-                "label": self.labels[idx],
             }
+
+            if hasattr(self, 'labels'):
+                d['label'] = self.labels[idx]
+
+            return d
